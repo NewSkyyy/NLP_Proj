@@ -9,14 +9,14 @@ import time
 from pathlib import Path
 from collections import Counter
 
-RAW_DATA = '1_RawData'
+RAW_DATA = 'Texts'
 DATA_SET = '2_DataSet'
 RESULT = '3_Result'
 POS_FILTER = ['VERB', 'NOUN','ADJF','ADJS','COMP','INFN','PRTF','PRTS','GRND','NUMR','ADVB','NPRO','PRED','PREP','CONJ','PRCL','INTJ']
 LEMMATIZE_TEXT = True
-LINE_NUMBER_FOR_EXTRACTION = 1000 #!!! Количество строк извлекаемых из исходных текстов !!!
+LINE_NUMBER_FOR_EXTRACTION = 300 #!!! Количество строк извлекаемых из исходных текстов !!!
 WORD_USAGE_THRESHOLD = 0.2; #!!! Порог встречаемости слова в классе, для добавления слова в словарь !!!
-CSV_DELIMITER_OPTION = [";","sep=;\n"] #Указание исользуемого разделителя для CSV файла
+CSV_DELIMITER_OPTION = [",","sep=,\n"] #Указание исользуемого разделителя для CSV файла
 USE_CSV_DELIMITER = False #Опция использования разделителя CSV файла
 GENERATE_READABLE_SOURCE_LIST = False
 TO_REMOVE_PATHS = [Path(RESULT, "selected_tf-idf_dict.pickle"), Path(RESULT, "all_groups_external_tf-idf.json"), ]
@@ -246,11 +246,11 @@ def final_constructor(use_certain_delimeter = USE_CSV_DELIMITER):
     selected_tf_idf_dict_path = Path(RESULT, "selected_tf-idf_dict.pickle")
     with open(selected_tf_idf_dict_path, 'rb') as file:
         selected_tf_idf_dict = pickle.load(file)
-    words_list = [0]*2 + list(selected_tf_idf_dict.keys())
-    result_path = Path(RESULT, "formatted_result.csv")
-    table_header = ["Группа", "Имя Файла", "Количество слов", "Количество предложений"]
+    words_list = list(selected_tf_idf_dict.keys())
+    result_path = "Word_Frequencies.csv"
+    table_header = ["Class_name", "Text_name"]
     table_header.extend(words_list[2:])
-    with open(result_path, 'w', newline='') as csvfile:
+    with open(result_path, 'w', newline='', encoding="UTF-8") as csvfile:
         if use_certain_delimeter:
             csvfile.write(CSV_DELIMITER_OPTION[1])
         writer = csv.writer(csvfile, delimiter= CSV_DELIMITER_OPTION[0])
@@ -259,7 +259,7 @@ def final_constructor(use_certain_delimeter = USE_CSV_DELIMITER):
         for sources_group in sources_paths:
             for text_file in Path(sources_group).glob("*.txt"):
                 if Path(text_file).stem in sources_dict:
-                    row_content = [Path(sources_group).name, Path(text_file).stem]
+                    row_content = [Path(sources_group).name, Path(text_file).stem+".txt"]
                     words_frequencies = [0] * (len(selected_tf_idf_dict.keys())+2)
                     source_words = sources_dict.get(Path(text_file).stem)
                     for word, value in source_words:
@@ -299,18 +299,6 @@ def garbage_removal(to_remove = TO_REMOVE_PATHS):
         if (path):
             path.unlink()
     return 0
-    
-# Код реализует алгоритм извлечения наиболее значимых слов из текстов группированых каталогов, 
-# размещенных в каталоге 1_RawData.
-# Пример:
-# В каталоге 1_RawData содержится каталоги с названиями Пушкин, Гоголь, Толстой, 
-# в которых содержатся текстовые файлы, с текстами произведений писателей из названий каталогов.
-# В результирующем каталоге 3_Result, в результате работы программы, будут содрежатся:
-# json файл dict_sources, сожержащий слова, содержащиеся в тексте и их частоты относительно текста
-# csv файл result, содержащий слова с наибольшим модифицированным TF-IDF (наиболее значимые) и изначение TF-IDF
-# csv файл formatted_result, содержащий первые n извлекаемых слов из таблицы result, с указанием их принадлежности к каталогу и их внутритекстовых частот.
-# В каталоге 2_DataSet содержатся промежуточные файлы, необходимые для расчетов.
-# Необходимые для работы файлы: каталог 1_RawData с каталогами с различными именами (> 1 каталога), содержащие текстовые файлы с текстами.
 
 def main():
     start_time = time.time() #Старт расчета затраченного времени
